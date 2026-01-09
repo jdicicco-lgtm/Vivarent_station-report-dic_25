@@ -4,215 +4,215 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Dashboard Performance — Dicembre 2025</title>
-
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <!-- Flatpickr (date range) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-
-  <!-- Choices.js (nice selects) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
-
-  <!-- Grid.js (table) -->
-  <link href="https://cdn.jsdelivr.net/npm/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
-
   <link rel="stylesheet" href="./styles.css" />
+
+  <!-- Chart.js + date adapter -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
-  <header class="topbar">
-    <div class="topbar__left">
-      <div class="title">Performance Dashboard</div>
-      <div class="subtitle">Dicembre 2025 → 04 Gennaio 2026</div>
-    </div>
-    <div class="topbar__right">
-      <span class="pill" id="dataStatus">Caricamento dati…</span>
+  <header class="container">
+    <div class="topbar">
+      <div>
+        <h1>Performance Dashboard</h1>
+        <p class="subtitle">Dicembre 2025 → 04 Gennaio 2026</p>
+      </div>
+      <div id="status" class="status">Caricamento dati…</div>
     </div>
   </header>
 
   <main class="container">
-    <!-- Fixed occupancy KPIs (top) -->
-    <section class="grid">
-      <div class="card card--span-12">
-        <div class="card__header">
-          <h2>Occupazione per Branch Office (fissa)</h2>
-          <div class="card__meta">Sempre visibile • Non influenzata dai filtri</div>
-        </div>
-        <div id="occupationKpis" class="kpi-grid"></div>
+
+    <!-- OCCUPAZIONE KPI FISSI (IN ALTO) -->
+    <section class="card">
+      <div class="card__head">
+        <h2>Occupazione per Branch Office (fissa)</h2>
+        <p class="muted">Sempre visibile • Non influenzata dai filtri</p>
       </div>
+      <div id="occupationKpis" class="kpi-grid"></div>
     </section>
 
-    <!-- Filters -->
-    <section class="panel">
-      <div class="panel__header">
+    <!-- FILTRI -->
+    <section class="card">
+      <div class="card__head">
         <h2>Filtri</h2>
-        <div class="panel__hint">Agiscono solo su KPI Revenue / Ancillaries / Incidenti / Prenotazioni e sui grafici collegati.</div>
+        <p class="muted">Agiscono solo su KPI Revenue / Ancillaries / Incidenti / Prenotazioni e sui grafici collegati.</p>
       </div>
 
       <div class="filters">
         <div class="field">
           <label>Intervallo date (pick-up)</label>
-          <input id="dateRange" class="input" placeholder="Seleziona un range (es. 01/12–31/12)" />
+          <div class="row">
+            <input id="dateFrom" type="date" />
+            <input id="dateTo" type="date" />
+          </div>
+          <p class="hint">Puoi selezionare più giorni impostando un range.</p>
         </div>
 
         <div class="field">
           <label>Branch office</label>
-          <select id="branchSelect" class="input" multiple></select>
+          <select id="branchSelect" multiple></select>
+          <p class="hint">Ctrl/Cmd per selezione multipla.</p>
         </div>
 
         <div class="field">
           <label>Agente</label>
-          <select id="agentSelect" class="input" multiple></select>
+          <select id="agentSelect" multiple></select>
+          <p class="hint">Ctrl/Cmd per selezione multipla.</p>
         </div>
 
-        <div class="field field--actions">
-          <button id="resetBtn" class="btn">Reset</button>
-          <button id="applyBtn" class="btn btn--primary">Applica</button>
+        <div class="actions">
+          <button id="resetBtn" class="btn btn--ghost">Reset</button>
+          <button id="applyBtn" class="btn">Applica</button>
         </div>
       </div>
     </section>
 
-    <!-- Fixed cards -->
-    <section class="grid">
-      <div class="card card--span-4">
-        <div class="card__header">
+    <!-- KPI FISSI: OCCUPAZIONE MEDIA + FLOTTA + MANUTENZIONE -->
+    <section class="grid-3">
+      <div class="card">
+        <div class="card__head">
           <h2>Occupazione media (fissa)</h2>
-          <div class="card__meta">Media semplice delle % branch</div>
+          <p class="muted">Media semplice delle % branch</p>
         </div>
         <div class="kpi">
-          <div class="kpi__value" id="occAvg">—</div>
+          <div class="kpi__value" id="avgOcc">—</div>
           <div class="kpi__label">Media occupazione</div>
         </div>
       </div>
 
-      <div class="card card--span-4">
-        <div class="card__header">
+      <div class="card">
+        <div class="card__head">
           <h2>Flotta (fissa)</h2>
-          <div class="card__meta">Non cambia con branch office</div>
+          <p class="muted">Non cambia con branch office</p>
         </div>
         <div class="kpi">
           <div class="kpi__value" id="fleetTotal">—</div>
           <div class="kpi__label">Veicoli totali</div>
-          <div class="kpi__sub" id="fleetInService">—</div>
+          <div class="kpi__mini"><span>in service</span><strong id="fleetInService">—</strong></div>
         </div>
       </div>
 
-      <div class="card card--span-4">
-        <div class="card__header">
+      <div class="card">
+        <div class="card__head">
           <h2>Manutenzione (fissa)</h2>
-          <div class="card__meta">Conteggio per Service Type</div>
+          <p class="muted">Conteggio per Service Type</p>
         </div>
-        <canvas id="maintenanceChart" height="120"></canvas>
+        <canvas id="serviceByType"></canvas>
       </div>
     </section>
 
-    <!-- Filtered KPI block -->
-    <section class="grid">
-      <div class="card card--span-3">
-        <div class="card__header">
+    <!-- KPI FILTRABILI -->
+    <section class="grid-4">
+      <div class="card">
+        <div class="card__head">
           <h2>Revenue</h2>
-          <div class="card__meta">Filtrabile</div>
+          <p class="muted">Filtrabile</p>
         </div>
         <div class="kpi">
           <div class="kpi__value" id="revTotal">—</div>
           <div class="kpi__label">Totale</div>
-          <div class="kpi__sub" id="revDay">—</div>
+          <div class="kpi__mini"><span>revenue/day</span><strong id="revDay">—</strong></div>
         </div>
       </div>
 
-      <div class="card card--span-3">
-        <div class="card__header">
+      <div class="card">
+        <div class="card__head">
           <h2>Ancillaries</h2>
-          <div class="card__meta">Filtrabile</div>
+          <p class="muted">Filtrabile</p>
         </div>
         <div class="kpi">
           <div class="kpi__value" id="ancTotal">—</div>
           <div class="kpi__label">Vendute</div>
-          <div class="kpi__sub" id="ancDay">—</div>
-          <div class="kpi__sub kpi__sub--strong" id="incidentsValue">—</div>
+          <div class="kpi__mini"><span>ancillaries/day</span><strong id="ancDay">—</strong></div>
+          <div class="kpi__mini"><span>incidenti</span><strong id="incTotal">—</strong></div>
         </div>
       </div>
 
-      <div class="card card--span-3">
-        <div class="card__header">
+      <div class="card">
+        <div class="card__head">
           <h2>Prenotazioni</h2>
-          <div class="card__meta">Filtrabile</div>
+          <p class="muted">Filtrabile</p>
         </div>
         <div class="kpi">
-          <div class="kpi__value" id="bookingsTotal">—</div>
+          <div class="kpi__value" id="bookTotal">—</div>
           <div class="kpi__label">Totale</div>
-          <div class="kpi__sub" id="avgDuration">—</div>
         </div>
       </div>
 
-      <div class="card card--span-3">
-        <div class="card__header">
+      <div class="card">
+        <div class="card__head">
           <h2>Canali</h2>
-          <div class="card__meta">Walk-In evidenziate</div>
+          <p class="muted">Walk-In evidenziate</p>
         </div>
-        <canvas id="channelDonut" height="120"></canvas>
+        <canvas id="channelsDonut"></canvas>
       </div>
     </section>
 
-    <!-- Charts block -->
-    <section class="grid">
-      <div class="card card--span-6">
-        <div class="card__header">
+    <!-- GRAFICI -->
+    <section class="grid-2">
+      <div class="card">
+        <div class="card__head">
           <h2>% Prenotazioni per Provider</h2>
-          <div class="card__meta">Filtrabile</div>
+          <p class="muted">Filtrabile</p>
         </div>
-        <canvas id="providerBar" height="140"></canvas>
+        <canvas id="providersBar"></canvas>
       </div>
 
-      <div class="card card--span-6">
-        <div class="card__header">
+      <div class="card">
+        <div class="card__head">
           <h2>Flotta per Provider (fissa)</h2>
-          <div class="card__meta">Distribuzione</div>
+          <p class="muted">Distribuzione</p>
         </div>
-        <canvas id="fleetPie" height="140"></canvas>
-      </div>
-
-      <div class="card card--span-12">
-        <div class="card__header">
-          <h2>Trend prenotazioni (01/12 → 04/01)</h2>
-          <div class="card__meta">Hover: n prenotazioni, revenue, flotta</div>
-        </div>
-        <canvas id="trendChart" height="110"></canvas>
-      </div>
-
-      <div class="card card--span-12">
-        <div class="card__header">
-          <h2>Branch Office × Agente</h2>
-          <div class="card__meta">Revenue • Ancillaries • Prenotazioni (filtrabile)</div>
-        </div>
-        <div id="gridTable"></div>
-      </div>
-
-      <div class="card card--span-12">
-        <div class="card__header">
-          <h2>Prenotazioni per giorno — Dicembre 2025</h2>
-          <div class="card__meta">Linea giornaliera (01/12 → 31/12)</div>
-        </div>
-        <canvas id="decDailyChart" height="110"></canvas>
+        <canvas id="fleetPie"></canvas>
       </div>
     </section>
 
-    <footer class="footer">
-      <div>Dataset: REPORT DICEMBRE 25.xlsx → JSON (vedi /data).</div>
-      <div class="muted">Suggerimento: standardizzare naming Branch Office tra fogli per join perfetti.</div>
+    <section class="card">
+      <div class="card__head">
+        <h2>Trend prenotazioni (01/12 → 04/01)</h2>
+        <p class="muted">Hover: n prenotazioni, revenue, flotta</p>
+      </div>
+      <canvas id="trendChart"></canvas>
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <h2>Branch Office × Agente</h2>
+        <p class="muted">Revenue • Ancillaries • Prenotazioni (filtrabile)</p>
+      </div>
+      <div class="table-wrap">
+        <table id="boAgentTable">
+          <thead>
+            <tr>
+              <th>Branch Office</th>
+              <th>Agente</th>
+              <th class="num">Revenue</th>
+              <th class="num">Ancillaries</th>
+              <th class="num">Prenotazioni</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- NUOVO: TUTTI I GIORNI DI DICEMBRE -->
+    <section class="card">
+      <div class="card__head">
+        <h2>Prenotazioni per giorno — Dicembre 2025</h2>
+        <p class="muted">Linea giornaliera (01/12 → 31/12) • Filtra per Branch/Agente</p>
+      </div>
+      <canvas id="decDailyChart"></canvas>
+    </section>
+
+    <footer class="foot muted">
+      Dataset: REPORT DICEMBRE 25.xlsx → JSON (vedi /data).<br/>
+      Suggerimento: standardizzare naming Branch Office tra fogli per join perfetti.
     </footer>
+
   </main>
 
-  <!-- Libraries -->
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
-
-  <!-- App -->
-  <script type="module" src="./app.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>
